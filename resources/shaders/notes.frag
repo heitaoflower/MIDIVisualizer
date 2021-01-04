@@ -1,17 +1,20 @@
 #version 330
+#define CHANNELS_COUNT 8
 
 in INTERFACE {
-	float isMinor;
 	vec2 uv;
 	vec2 noteSize;
+	float isMinor;
+	float channel;
 } In;
 
-uniform vec3 baseColor;
-uniform vec3 minorColor;
+uniform vec3 baseColor[CHANNELS_COUNT];
+uniform vec3 minorColor[CHANNELS_COUNT];
 uniform vec2 inverseScreenSize;
+uniform float colorScale;
+uniform float keyboardHeight = 0.25;
 
 #define cornerRadius 0.01
-#define bottomLimit 0.25
 
 out vec4 fragColor;
 
@@ -19,7 +22,7 @@ out vec4 fragColor;
 void main(){
 	
 	// If lower area of the screen, discard fragment as it should be hidden behind the keyboard.
-	if(gl_FragCoord.y < bottomLimit/inverseScreenSize.y){
+	if(gl_FragCoord.y < keyboardHeight/inverseScreenSize.y){
 		discard;
 	}
 	
@@ -31,7 +34,8 @@ void main(){
 	}
 	
 	// Fragment color.
-	fragColor.rgb = mix(baseColor, minorColor, In.isMinor);
+	int cid = int(In.channel);
+	fragColor.rgb = colorScale * mix(baseColor[cid], minorColor[cid], In.isMinor);
 	
 	if(	radiusPosition > 0.8){
 		fragColor.rgb *= 1.05;

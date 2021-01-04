@@ -1,77 +1,45 @@
 #ifndef MIDI_TRACK_H
 #define MIDI_TRACK_H
 
-#include "MIDIUtils.h"
+#include "MIDIBase.h"
 
-struct MIDINote {
-	
-	MIDINote(short aNote, double aStart, double aDuration, short aVelocity, short aChannel) : start(aStart), duration(aDuration), note(aNote), velocity(aVelocity), channel(aChannel) { }
-	
-	double start;
-	double duration;
-	short note;
-	short velocity;
-	short channel;
-	
-};
-
-struct MIDIEvent {
-	
-	MIDIEvent(EventClass aCategory, uint8_t aType, size_t aDelta, std::vector<short> aData) : category(aCategory), type(aType), delta(aDelta), data(aData) { }
-	
-	EventClass category;
-	uint8_t type;
-	size_t delta;
-	std::vector<short> data;
-	
-};
-
-enum NoteType{
-	majorNotes, minorNotes, both
-};
-
+typedef std::array<ActiveNoteInfos, 128> ActiveNotesArray;
 
 class MIDITrack {
-
-private:
-	
-	uint8_t _previousEventFirstByte = 0x0;
-	double _unitsPerQuarterNote;
-	double _unitTime;
-	double _timeSignature;
-	int _tempo;
-	
-	MIDIEvent readMIDIEvent(const std::vector<char> & buffer, size_t & position, size_t delta);
-	MIDIEvent readMetaEvent(const std::vector<char> & buffer, size_t & position, size_t delta);
-	MIDIEvent readSysexEvent(const std::vector<char> & buffer, size_t & position, size_t delta);
-	
-	double computeMeasureDuration(int tempo);
-	
 public:
 	
-	size_t readTrack(const std::vector<char>& buffer, size_t pos, uint16_t unitsPerQuarterNote);
+	size_t readTrack(const std::vector<char>& buffer, size_t pos);
 	
-	void extractNotes(short lowerBound, short higherBound, bool normalize);
-	
-	void updateMetrics(const int tempo, const double signature);
+	double extractTempos(std::vector<MIDITempo> & tempos) const;
 
-	int getTempo() const { return _tempo; }
-	double getSignature() const { return _timeSignature;  }
+	void extractNotes(const std::vector<MIDITempo> & tempos, uint16_t unitsPerQuarterNote, unsigned int trackId);
 
-	std::vector<MIDINote> getNotes(NoteType type);
-	
-	bool containsNotes();
+	void print() const;
 
-	void printNotes() const;
-	void printEvents() const;
+	void getNotes(std::vector<MIDINote> & notes, NoteType type) const;
+
+	void getNotesActive(ActiveNotesArray & actives, double time) const;
+
+	void normalizePedalVelocity();
+
+	void getPedalsActive(float & damper, float &sostenuto, float &soft, float &expression, double time) const;
 	
-	std::vector<MIDINote> notes;
-	std::vector<MIDIEvent> events;
-	std::string name;
-	std::string instrument;
-	double secondsPerMeasure;
-	bool hasTempo;
-	
+	void merge(MIDITrack & other);
+
+	void updateSets(const SetOptions & options);
+
+private:
+
+	std::pair<double, double> computeNoteTimings(const std::vector<MIDITempo> & tempos, size_t start,size_t end, uint16_t upqn) const;
+
+	std::vector<MIDIEvent> _events;
+	std::vector<MIDINote> _notes;
+	std::vector<MIDIPedal> _pedals;
+
+	std::string _name;
+	std::string _instrument;
+	uint8_t _previousEventFirstByte = 0x0;
+
 };
 
 #endif // MIDI_TRACK_H

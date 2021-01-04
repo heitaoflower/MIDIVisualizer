@@ -47,3 +47,22 @@ void Score::setColors(const glm::vec3 & linesColor, const glm::vec3 & textColor,
 	glUseProgram(0);
 }
 
+void Score::setKeyboardSize(float keyboardHeight){
+	glUseProgram(_programId);
+	glUniform1f(glGetUniformLocation(_programId, "keyboardHeight"), keyboardHeight);
+	glUseProgram(0);
+}
+
+void Score::setMinMaxKeys(int minKey, int minKeyMajor, int notesCount){
+	glUseProgram(_programId);
+	glUniform1i(glGetUniformLocation(_programId, "minNoteMajor"), minKeyMajor);
+	glUniform1f(glGetUniformLocation(_programId, "notesCount"), float(notesCount));
+	glUseProgram(0);
+}
+
+void Score::setPlayDirection(bool reverse){
+	glUseProgram(_programId);
+	glUniform1i(glGetUniformLocation(_programId, "reverseMode"), reverse ? 1 : 0);
+	glUseProgram(0);
+}
+
